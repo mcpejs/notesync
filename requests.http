@@ -1,0 +1,14 @@
+### 유저 생성
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{"name": "alice"}
+
+### 이름 누락
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{}
+
+### 목록
+GET http://localhost:8080/users
