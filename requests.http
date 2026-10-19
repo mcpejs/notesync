@@ -19,5 +19,8 @@ GET http://localhost:8080/users/1
 ### 존재 안할 때
 GET http://localhost:8080/users/99999999
 
+### 조회 문자열 
+GET http://localhost:8080/users/string
+
 ### 쿼리로
 GET http://localhost:8080/users/1?id=1
