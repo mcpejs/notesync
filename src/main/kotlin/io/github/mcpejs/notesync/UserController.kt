@@ -14,4 +14,7 @@ class UserController(private val userService: UserService) {
 
     @GetMapping
     fun list(): List<User> = userService.findAll()
+
+    @GetMapping("/{id}")
+    fun get(@PathVariable id: Long): User = userService.findById(id)
 }

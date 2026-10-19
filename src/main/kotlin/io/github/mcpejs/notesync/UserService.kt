@@ -14,4 +14,6 @@ class UserService {
     }
 
     fun findAll(): List<User> = users
+
+    fun findById(id: Long): User = users.find { it.id == id } ?: throw UserNotFoundException(id)
 }

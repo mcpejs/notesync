@@ -12,3 +12,12 @@ Content-Type: application/json
 
 ### 목록
 GET http://localhost:8080/users
+
+### 조회 단건
+GET http://localhost:8080/users/1
+
+### 존재 안할 때
+GET http://localhost:8080/users/99999999
+
+### 쿼리로
+GET http://localhost:8080/users/1?id=1
