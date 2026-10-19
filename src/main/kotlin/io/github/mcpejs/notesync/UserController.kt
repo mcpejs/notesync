@@ -2,14 +2,24 @@ package io.github.mcpejs.notesync
 
 import org.springframework.web.bind.annotation.*
 
-data class CreateUserRequest(val name: String)
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
+
+data class CreateUserRequest(
+    @NotBlank(message = "이름은 비어 있을 수 없습니다")
+    @Size(max = 20, message = "이름은 20자 이하여야 합니다")
+    val name: String,
+)
 
 @RestController
 @RequestMapping("/users")
 class UserController(private val userService: UserService) {
 
     @PostMapping
-    fun create(@RequestBody request: CreateUserRequest): User =
+    fun create(
+        @Valid
+        @RequestBody request: CreateUserRequest): User =
         userService.create(request.name)
 
     @GetMapping
