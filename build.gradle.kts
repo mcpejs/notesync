@@ -3,6 +3,7 @@ plugins {
 	kotlin("plugin.spring") version "2.3.21"
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
+	kotlin("plugin.jpa") version "2.3.21"
 }
 
 group = "io.github.mcpejs"
@@ -27,6 +28,9 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	implementation("org.springframework.boot:spring-boot-starter-validation")
+
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	runtimeOnly("com.mysql:mysql-connector-j")
 }
 
 kotlin {
@@ -37,4 +41,10 @@ kotlin {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+allOpen {
+	annotation("jakarta.persistence.Entity")
+	annotation("jakarta.persistence.MappedSuperclass")
+	annotation("jakarta.persistence.Embeddable")
 }
