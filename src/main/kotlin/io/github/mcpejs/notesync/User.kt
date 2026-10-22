@@ -1,4 +1,13 @@
 package io.github.mcpejs.notesync
 
-data class User(val id: Long, val name: String)
+import jakarta.persistence.*
 
+@Entity
+@Table(name = "users")
+class User(
+    val name: String,
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
+)

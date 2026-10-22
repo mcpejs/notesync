@@ -1,19 +1,17 @@
 package io.github.mcpejs.notesync
 
 import org.springframework.stereotype.Service
+import org.springframework.data.repository.findByIdOrNull
 
 @Service
-class UserService {
-    private val users = mutableListOf<User>()
-    private var nextId = 1L
-
+class UserService(private val userRepository: UserRepository) {
     fun create(name: String): User {
-        val user = User(nextId++, name)
-        users.add(user)
-        return user
+        val user = User(name)
+        return userRepository.save(user)
+
     }
 
-    fun findAll(): List<User> = users
+    fun findAll(): List<User> = userRepository.findAll()
 
-    fun findById(id: Long): User = users.find { it.id == id } ?: throw UserNotFoundException(id)
+    fun findById(id: Long): User = userRepository.findByIdOrNull(id) ?: throw UserNotFoundException(id)
 }
