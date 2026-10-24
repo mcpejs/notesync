@@ -2,7 +2,19 @@
 POST http://localhost:8080/users
 Content-Type: application/json
 
-{"name": "alice"}
+{"name": "alice", "email": "alice@example.com"}
+
+### 이메일 빈값
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{"name": "alice", "email": ""}
+
+### 이메일 형식 틀림
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{"name": "alice", "email": "aliceexample.com"}
 
 ### 이름 누락
 POST http://localhost:8080/users
@@ -52,12 +64,6 @@ POST http://localhost:8080/users
 Content-Type: application/json
 
 {}
-
-### 잘못된 name 타입
-POST http://localhost:8080/users
-Content-Type: application/json
-
-{"name": 123}
 
 ### 숫자가 아닌 id
 GET http://localhost:8080/users/abc

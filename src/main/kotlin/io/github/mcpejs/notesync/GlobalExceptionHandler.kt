@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.ErrorResponse as SpringErrorResponse
+import org.springframework.dao.DataIntegrityViolationException
 
 data class ErrorResponse(val code: String, val message: String)
 
@@ -21,6 +22,12 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(ErrorResponse("USER_NOT_FOUND", e.message ?: ""))
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleDataIntegrity(e: DataIntegrityViolationException):ResponseEntity<ErrorResponse>{
+        log.warn("DataIntegrityViolationException : {}", e.message)
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse("DATA_CONFLICT", "중복 되는 정보가 존재합니다."))
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)

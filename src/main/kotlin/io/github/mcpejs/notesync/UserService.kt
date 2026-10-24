@@ -5,8 +5,8 @@ import org.springframework.data.repository.findByIdOrNull
 
 @Service
 class UserService(private val userRepository: UserRepository) {
-    fun create(name: String): User {
-        val user = User(name)
+    fun create(name: String, email: String): User {
+        val user = User(name, email)
         return userRepository.save(user)
 
     }
