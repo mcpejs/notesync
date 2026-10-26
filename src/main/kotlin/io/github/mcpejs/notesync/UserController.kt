@@ -6,6 +6,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import org.springframework.http.HttpStatus
 
 data class CreateUserRequest(
     @NotBlank(message = "이름은 비어 있을 수 없습니다")
@@ -23,6 +24,7 @@ data class CreateUserRequest(
 class UserController(private val userService: UserService) {
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     fun create(
         @Valid
         @RequestBody request: CreateUserRequest): User =
