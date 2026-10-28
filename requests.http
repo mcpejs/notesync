@@ -16,6 +16,40 @@ Content-Type: application/json
 
 {}
 
+
+
+
+### 맞는 이메일과 맞는 비밀번호
+POST http://localhost:8080/users/login
+Content-Type: application/json
+
+{"email": "alice@example.com", "password": "RANDOMPASSWORD"}
+
+### 맞는 이메일과 틀린 비밀번호
+POST http://localhost:8080/users/login
+Content-Type: application/json
+
+{"email": "alice@example.com", "password": "WRONGPASSWORD"}
+
+### 없는 이메일과 맞는 비밀번호
+POST http://localhost:8080/users/login
+Content-Type: application/json
+
+{"email": "nonexistent@example.com", "password": "RANDOMPASSWORD"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### 목록
 GET http://localhost:8080/users
 

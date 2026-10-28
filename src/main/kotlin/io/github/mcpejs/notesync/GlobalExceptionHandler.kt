@@ -24,6 +24,13 @@ class GlobalExceptionHandler {
             .body(ErrorResponse("USER_NOT_FOUND", e.message ?: ""))
     }
 
+    @ExceptionHandler(InvalidCredentialsException::class)
+    fun handleInvalidCredentials(e: InvalidCredentialsException): ResponseEntity<ErrorResponse> {
+        log.warn("Login failed")
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ErrorResponse("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다"))
+    }
+
     @ExceptionHandler(DataIntegrityViolationException::class)
     fun handleDataIntegrity(e: DataIntegrityViolationException):ResponseEntity<ErrorResponse>{
         log.warn("DataIntegrityViolationException : {}", e.message)

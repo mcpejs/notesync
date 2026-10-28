@@ -23,6 +23,14 @@ data class CreateUserRequest(
     val password: String,
 )
 
+data class LoginRequest(
+    @NotBlank(message = "이메일은 비어 있을 수 없습니다")
+    val email: String,
+
+    @NotBlank(message = "비밀번호는 비어 있을 수 없습니다")
+    val password: String,
+)
+
 data class UserResponse(
     val id: Long,
     val name: String,
@@ -43,6 +51,10 @@ class UserController(private val userService: UserService) {
         @Valid
         @RequestBody request: CreateUserRequest): UserResponse =
         UserResponse.from(userService.create(request.name, request.email, request.password))
+
+    @PostMapping("/login")
+    fun login(@Valid @RequestBody request: LoginRequest): UserResponse =
+        UserResponse.from(userService.login(request.email, request.password))
 
     @GetMapping
     fun list(): List<UserResponse> = userService.findAll().map { UserResponse.from(it) }
