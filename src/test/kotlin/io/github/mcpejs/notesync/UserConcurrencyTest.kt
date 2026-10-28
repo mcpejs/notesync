@@ -26,7 +26,7 @@ class UserConcurrencyTest {
     fun createsUser() {
         val email = "test-${UUID.randomUUID()}@example.com"
 
-        val saved = userService.create("tester", email)
+        val saved = userService.create("tester", email, "password123")
 
         val found = userRepository.findById(saved.id!!).get()
         assertEquals(email, found.email)
@@ -47,7 +47,7 @@ class UserConcurrencyTest {
             pool.submit {
                 start.await()
                 try {
-                    userService.create("tester", email)
+                    userService.create("tester", email, "password123")
                     success.incrementAndGet()
                 } catch (e: DataIntegrityViolationException) {
                     conflict.incrementAndGet()

@@ -2,19 +2,13 @@
 POST http://localhost:8080/users
 Content-Type: application/json
 
-{"name": "alice", "email": "alice@example.com"}
+{"name": "alice", "email": "alice@example.com", "password": "RANDOMPASSWORD"}
 
 ### 이메일 빈값
 POST http://localhost:8080/users
 Content-Type: application/json
 
 {"name": "alice", "email": ""}
-
-### 이메일 형식 틀림
-POST http://localhost:8080/users
-Content-Type: application/json
-
-{"name": "alice", "email": "aliceexample.com"}
 
 ### 이름 누락
 POST http://localhost:8080/users

@@ -17,7 +17,21 @@ data class CreateUserRequest(
     @Size(max = 100, message = "이메일은 100자 이하여야 합니다")
     @Email
     val email: String,
+
+    @NotBlank(message = "비밀번호는 비어 있을 수 없습니다")
+    @Size(min = 8, max = 72, message = "비밀번호는 8자 이상 72자 이하여야 합니다")
+    val password: String,
 )
+
+data class UserResponse(
+    val id: Long,
+    val name: String,
+    val email: String,
+) {
+    companion object {
+        fun from(user: User) = UserResponse(user.id!!, user.name, user.email)
+    }
+}
 
 @RestController
 @RequestMapping("/users")
@@ -27,12 +41,12 @@ class UserController(private val userService: UserService) {
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
         @Valid
-        @RequestBody request: CreateUserRequest): User =
-        userService.create(request.name, request.email)
+        @RequestBody request: CreateUserRequest): UserResponse =
+        UserResponse.from(userService.create(request.name, request.email, request.password))
 
     @GetMapping
-    fun list(): List<User> = userService.findAll()
+    fun list(): List<UserResponse> = userService.findAll().map { UserResponse.from(it) }
 
     @GetMapping("/{id}")
-    fun get(@PathVariable id: Long): User = userService.findById(id)
+    fun get(@PathVariable id: Long): UserResponse = UserResponse.from(userService.findById(id))
 }
