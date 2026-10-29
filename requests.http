@@ -98,3 +98,44 @@ GET http://localhost:8080/users/abc
 
 ### 지원하지 않는 메서드
 DELETE http://localhost:8080/users
+
+
+### ===== 문서 =====
+# userId는 실제로 있는 사용자 id로 바꿔서 실행 (GET /users로 확인)
+@userId = 1
+
+### 문서 생성: 제목 있음 -> 201
+POST http://localhost:8080/users/{{userId}}/documents
+Content-Type: application/json
+
+{"title": "첫 문서"}
+
+### 문서 생성: 제목 없음 -> 201, "제목없음"
+POST http://localhost:8080/users/{{userId}}/documents
+Content-Type: application/json
+
+{}
+
+### 문서 생성: 공백 제목 -> 201, "제목없음"
+POST http://localhost:8080/users/{{userId}}/documents
+Content-Type: application/json
+
+{"title": "   "}
+
+### 문서 생성: 101자 제목 -> 400
+POST http://localhost:8080/users/{{userId}}/documents
+Content-Type: application/json
+
+{"title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+
+### 문서 생성: 없는 사용자 -> 404
+POST http://localhost:8080/users/99999999/documents
+Content-Type: application/json
+
+{"title": "주인 없음"}
+
+### 문서 목록 -> 200
+GET http://localhost:8080/users/{{userId}}/documents
+
+### 문서 목록: 없는 사용자 -> 404
+GET http://localhost:8080/users/99999999/documents

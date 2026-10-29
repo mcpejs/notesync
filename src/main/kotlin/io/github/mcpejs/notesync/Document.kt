@@ -7,13 +7,16 @@ import java.time.LocalDateTime
 @Table(name = "documents")
 class Document(
     val title: String,
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     val user: User,
+
     val currentVersionId: Long? = null,
 
     @Column(insertable = false, updatable = false)
     val createdAt: LocalDateTime? = null,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
