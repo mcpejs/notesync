@@ -1,4 +1,4 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.auth
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

@@ -1,4 +1,6 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.user
+
+import io.github.mcpejs.notesync.auth.InvalidCredentialsException
 
 import org.springframework.stereotype.Service
 import org.springframework.data.repository.findByIdOrNull

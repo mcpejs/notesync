@@ -1,4 +1,4 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.document
 
 import org.springframework.data.jpa.repository.JpaRepository
 

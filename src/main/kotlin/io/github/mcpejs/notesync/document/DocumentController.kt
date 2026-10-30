@@ -1,10 +1,8 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.document
 
 import org.springframework.web.bind.annotation.*
 
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Email
-import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 
@@ -40,7 +38,4 @@ class DocumentController(private val documentService: DocumentService) {
     fun list(
         @PathVariable userId: Long,
     ): List<DocumentResponse> = documentService.findByUserId(userId).map { DocumentResponse.from(it) }
-//
-//    @GetMapping("/{id}")
-//    fun get(@PathVariable id: Long): UserResponse = UserResponse.from(userService.findById(id))
 }

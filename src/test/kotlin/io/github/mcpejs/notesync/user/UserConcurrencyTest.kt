@@ -1,4 +1,4 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.user
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

@@ -1,4 +1,6 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.document
+
+import io.github.mcpejs.notesync.user.UserService
 
 import org.springframework.stereotype.Service
 
@@ -13,7 +15,7 @@ class DocumentService(
 
     fun create(userId: Long, title: String?): Document {
         val user = userService.findById(userId)
-        val document = Document(if(title.isNullOrBlank()) DocumentService.DEFAULT_TITLE else title, user)
+        val document = Document(if(title.isNullOrBlank()) DEFAULT_TITLE else title, user)
         return documentRepository.save(document)
     }
 

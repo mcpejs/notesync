@@ -1,4 +1,6 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.document
+
+import io.github.mcpejs.notesync.user.User
 
 import jakarta.persistence.*
 import java.time.LocalDateTime

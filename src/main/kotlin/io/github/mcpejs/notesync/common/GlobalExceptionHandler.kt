@@ -1,4 +1,7 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.common
+
+import io.github.mcpejs.notesync.auth.InvalidCredentialsException
+import io.github.mcpejs.notesync.user.UserNotFoundException
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.TypeMismatchException

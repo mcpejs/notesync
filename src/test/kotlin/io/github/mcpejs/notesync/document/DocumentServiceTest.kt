@@ -1,4 +1,7 @@
-package io.github.mcpejs.notesync
+package io.github.mcpejs.notesync.document
+
+import io.github.mcpejs.notesync.user.UserNotFoundException
+import io.github.mcpejs.notesync.user.UserService
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
