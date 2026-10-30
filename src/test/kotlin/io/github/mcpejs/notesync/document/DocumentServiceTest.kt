@@ -44,4 +44,29 @@ class DocumentServiceTest {
             documentService.findByUserId(9999999999L)
         }
     }
+
+    @Test
+    fun ownerGetsRequestedDocument() {
+        val ownerId = newUserId()
+        val doc = documentService.create(ownerId, "내 문서")
+
+        val found = documentService.findById(doc.id!!, ownerId)
+
+        // 성공 여부가 아니라 "요청한 그 문서"가 왔는지 본다
+        assertEquals(doc.id, found.id)
+    }
+
+    @Test
+    fun otherUserCannotSeeDocument() {
+        val ownerId = newUserId()
+        val otherId = newUserId()
+        val doc = documentService.create(ownerId, "내 문서")
+
+        assertThrows<DocumentNotFoundException> {
+            documentService.findById(doc.id!!, otherId)
+        }
+        assertThrows<DocumentNotFoundException> {
+            documentService.findById(9999999999L, ownerId)
+        }
+    }
 }
