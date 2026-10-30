@@ -34,6 +34,12 @@ class DocumentController(private val documentService: DocumentService) {
     ): DocumentResponse= DocumentResponse.from(documentService.create(userId, request.title))
 
 
+    @GetMapping("/{id}")
+    fun get(
+        @PathVariable id: Long,
+        @RequestAttribute userId: Long,
+    ): DocumentResponse = DocumentResponse.from(documentService.findById(id, userId))
+
     @GetMapping
     fun list(
         @RequestAttribute userId: Long,

@@ -163,3 +163,34 @@ Authorization: Bearer {{token}}
 
 ### 문서 목록: 토큰 없음 -> 401
 GET http://localhost:8080/documents
+
+### ===== 문서 단건 + 주인 검사 =====
+# 다른 사용자(B)를 만들고 로그인해서 tokenB를 얻는다
+@tokenB = {{loginB.response.body.$.accessToken}}
+# 아래 docId는 내 문서 목록에서 본 id로 바꿔서 실행
+@docId = 5
+
+### B 회원가입 -> 201 (두 번째부터는 409, 괜찮음)
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{"name": "other", "email": "other@example.com", "password": "OTHERPASSWORD"}
+
+### B 로그인
+# @name loginB
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{"email": "other@example.com", "password": "OTHERPASSWORD"}
+
+### 내 문서 단건 -> 200
+GET http://localhost:8080/documents/{{docId}}
+Authorization: Bearer {{token}}
+
+### B가 내 문서 요청 -> 404 (없는 문서와 똑같아야 함)
+GET http://localhost:8080/documents/{{docId}}
+Authorization: Bearer {{tokenB}}
+
+### 없는 문서 -> 404
+GET http://localhost:8080/documents/99999999
+Authorization: Bearer {{token}}

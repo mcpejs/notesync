@@ -2,6 +2,7 @@ package io.github.mcpejs.notesync.common
 
 import io.github.mcpejs.notesync.auth.InvalidCredentialsException
 import io.github.mcpejs.notesync.auth.UnauthorizedException
+import io.github.mcpejs.notesync.document.DocumentNotFoundException
 import io.github.mcpejs.notesync.user.UserNotFoundException
 
 import org.slf4j.LoggerFactory
@@ -26,6 +27,13 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(ErrorResponse("USER_NOT_FOUND", e.message ?: ""))
+    }
+
+    @ExceptionHandler(DocumentNotFoundException::class)
+    fun handleDocumentNotFound(e: DocumentNotFoundException): ResponseEntity<ErrorResponse> {
+        log.warn("Document Not Found : {}", e.message)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse("DOCUMENT_NOT_FOUND", "문서를 찾을 수 없습니다"))
     }
 
     @ExceptionHandler(InvalidCredentialsException::class)
