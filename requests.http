@@ -1,17 +1,17 @@
 ### 유저 생성
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {"name": "alice", "email": "alice@example.com", "password": "RANDOMPASSWORD"}
 
 ### 이메일 빈값
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {"name": "alice", "email": ""}
 
 ### 이름 누락
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {}
@@ -20,19 +20,20 @@ Content-Type: application/json
 
 
 ### 맞는 이메일과 맞는 비밀번호
-POST http://localhost:8080/users/login
+# @name login
+POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {"email": "alice@example.com", "password": "RANDOMPASSWORD"}
 
 ### 맞는 이메일과 틀린 비밀번호
-POST http://localhost:8080/users/login
+POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {"email": "alice@example.com", "password": "WRONGPASSWORD"}
 
 ### 없는 이메일과 맞는 비밀번호
-POST http://localhost:8080/users/login
+POST http://localhost:8080/auth/login
 Content-Type: application/json
 
 {"email": "nonexistent@example.com", "password": "RANDOMPASSWORD"}
@@ -69,26 +70,26 @@ GET http://localhost:8080/users/1?id=1
 
 
 ### 빈 이름
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {"name": ""}
 
 ### 공백 이름
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {"name": "   "}
 
 ### 너무 긴 이름
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {"name": "abcdefghijklmnopqrstuvwxyz"}
 
 
 ### 공백 Body
-POST http://localhost:8080/users
+POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {}
@@ -101,41 +102,64 @@ DELETE http://localhost:8080/users
 
 
 ### ===== 문서 =====
-# userId는 실제로 있는 사용자 id로 바꿔서 실행 (GET /users로 확인)
-@userId = 1
+# 먼저 위의 "맞는 이메일과 맞는 비밀번호" 로그인을 실행하면, 그 응답에서 token을 꺼내 쓴다 (VS Code REST Client 문법)
+@token = {{login.response.body.$.accessToken}}
+
+### 내 정보 -> 200
+GET http://localhost:8080/users/me
+Authorization: Bearer {{token}}
+
+### 내 정보: 토큰 없음 -> 401
+GET http://localhost:8080/users/me
+
+### 내 정보: 변조된 토큰 -> 401
+GET http://localhost:8080/users/me
+Authorization: Bearer {{token}}x
+
+### 내 정보: 빈 토큰 -> 401
+GET http://localhost:8080/users/me
+Authorization: Bearer
+
+### 없는 경로: 토큰 없음 -> 404
+GET http://localhost:8080/nothing
 
 ### 문서 생성: 제목 있음 -> 201
-POST http://localhost:8080/users/{{userId}}/documents
+POST http://localhost:8080/documents
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {"title": "첫 문서"}
 
 ### 문서 생성: 제목 없음 -> 201, "제목없음"
-POST http://localhost:8080/users/{{userId}}/documents
+POST http://localhost:8080/documents
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {}
 
 ### 문서 생성: 공백 제목 -> 201, "제목없음"
-POST http://localhost:8080/users/{{userId}}/documents
+POST http://localhost:8080/documents
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {"title": "   "}
 
 ### 문서 생성: 101자 제목 -> 400
-POST http://localhost:8080/users/{{userId}}/documents
+POST http://localhost:8080/documents
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {"title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 
-### 문서 생성: 없는 사용자 -> 404
-POST http://localhost:8080/users/99999999/documents
+### 문서 생성: 토큰 없음 -> 401
+POST http://localhost:8080/documents
 Content-Type: application/json
 
-{"title": "주인 없음"}
+{"title": "토큰 없음"}
 
 ### 문서 목록 -> 200
-GET http://localhost:8080/users/{{userId}}/documents
+GET http://localhost:8080/documents
+Authorization: Bearer {{token}}
 
-### 문서 목록: 없는 사용자 -> 404
-GET http://localhost:8080/users/99999999/documents
+### 문서 목록: 토큰 없음 -> 401
+GET http://localhost:8080/documents

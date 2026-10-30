@@ -9,7 +9,7 @@ import java.util.Date
 @Component
 class JwtProvider(
     @Value("\${jwt.secret}") secret: String,
-    @Value("\${jwt.expiration-seconds}") private val expirationSeconds: Long,
+    @Value("\${jwt.expiration-seconds}") val expirationSeconds: Long,
 ) {
     // secret 문자열 → 바이트 → 서명 키
     private val key = Keys.hmacShaKeyFor(secret.toByteArray())

@@ -1,6 +1,7 @@
 package io.github.mcpejs.notesync.common
 
 import io.github.mcpejs.notesync.auth.InvalidCredentialsException
+import io.github.mcpejs.notesync.auth.UnauthorizedException
 import io.github.mcpejs.notesync.user.UserNotFoundException
 
 import org.slf4j.LoggerFactory
@@ -32,6 +33,13 @@ class GlobalExceptionHandler {
         log.warn("Login failed")
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(ErrorResponse("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다"))
+    }
+
+    @ExceptionHandler(UnauthorizedException::class)
+    fun handleUnauthorized(e: UnauthorizedException): ResponseEntity<ErrorResponse> {
+        log.warn("Unauthorized : {}", e.message)
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ErrorResponse("UNAUTHORIZED", "인증이 필요합니다"))
     }
 
     @ExceptionHandler(DataIntegrityViolationException::class)

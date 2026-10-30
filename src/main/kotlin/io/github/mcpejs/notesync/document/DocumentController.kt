@@ -22,7 +22,7 @@ data class DocumentResponse(
 }
 
 @RestController
-@RequestMapping("/users/{userId}/documents")
+@RequestMapping("/documents")
 class DocumentController(private val documentService: DocumentService) {
 
     @PostMapping
@@ -30,12 +30,12 @@ class DocumentController(private val documentService: DocumentService) {
     fun create(
         @Valid
         @RequestBody request: CreateDocumentRequest,
-        @PathVariable userId: Long
+        @RequestAttribute userId: Long
     ): DocumentResponse= DocumentResponse.from(documentService.create(userId, request.title))
 
 
     @GetMapping
     fun list(
-        @PathVariable userId: Long,
+        @RequestAttribute userId: Long,
     ): List<DocumentResponse> = documentService.findByUserId(userId).map { DocumentResponse.from(it) }
 }
