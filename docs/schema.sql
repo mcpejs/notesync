@@ -15,5 +15,18 @@ CREATE TABLE documents (
     title VARCHAR(100) NOT NULL,
     current_version_id BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    lock_version BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT fk_documents_users FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE versions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    document_id BIGINT NOT NULL,
+    num INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    client_request_id CHAR(36) NOT NULL UNIQUE,
+    CONSTRAINT fk_versions_documents FOREIGN KEY (document_id) REFERENCES documents(id),
+    CONSTRAINT uc_versions_document_id_num UNIQUE (document_id, num)
+);
+
+ALTER TABLE documents ADD CONSTRAINT fk_documents_versions FOREIGN KEY (current_version_id) REFERENCES versions(id);
