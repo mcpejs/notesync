@@ -2,6 +2,7 @@ package io.github.mcpejs.notesync.common
 
 import io.github.mcpejs.notesync.auth.InvalidCredentialsException
 import io.github.mcpejs.notesync.auth.UnauthorizedException
+import io.github.mcpejs.notesync.document.ConflictCopyCreatedException
 import io.github.mcpejs.notesync.document.DocumentNotFoundException
 import io.github.mcpejs.notesync.user.UserNotFoundException
 
@@ -17,6 +18,14 @@ import org.springframework.web.ErrorResponse as SpringErrorResponse
 import org.springframework.dao.DataIntegrityViolationException
 
 data class ErrorResponse(val code: String, val message: String)
+
+data class VersionConflictResponse(
+    val code: String,
+    val message: String,
+    val currentVersionId: Long?,
+    val conflictCopyId: Long,
+    val conflictCopyTitle: String,
+)
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -34,6 +43,20 @@ class GlobalExceptionHandler {
         log.warn("Document Not Found : {}", e.message)
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(ErrorResponse("DOCUMENT_NOT_FOUND", "문서를 찾을 수 없습니다"))
+    }
+
+    @ExceptionHandler(ConflictCopyCreatedException::class)
+    fun handleVersionConflict(e: ConflictCopyCreatedException): ResponseEntity<VersionConflictResponse> {
+        log.warn("Version conflict, copy : {}", e.copyId)
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            VersionConflictResponse(
+                "VERSION_CONFLICT",
+                "다른 기기에서 먼저 수정되었습니다",
+                e.currentVersionId,
+                e.copyId,
+                e.copyTitle,
+            )
+        )
     }
 
     @ExceptionHandler(InvalidCredentialsException::class)

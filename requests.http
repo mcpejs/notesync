@@ -194,3 +194,64 @@ Authorization: Bearer {{tokenB}}
 ### 없는 문서 -> 404
 GET http://localhost:8080/documents/99999999
 Authorization: Bearer {{token}}
+
+### ===== 버전 저장 =====
+# 새 문서 하나를 만들고 그 문서로 실행한다
+@newDocId = {{newDoc.response.body.$.id}}
+@v1Id = {{saveV1.response.body.$.id}}
+
+### 버전용 새 문서 -> 201
+# @name newDoc
+POST http://localhost:8080/documents
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{"title": "버전 테스트"}
+
+### 첫 저장: 기준 없음 -> 201, num 1
+# @name saveV1
+POST http://localhost:8080/documents/{{newDocId}}/versions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+Idempotency-Key: {{$guid}}
+
+{"baseVersionId": null}
+
+### 다음 저장: 기준 v1 -> 201, num 2
+POST http://localhost:8080/documents/{{newDocId}}/versions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+Idempotency-Key: {{$guid}}
+
+{"baseVersionId": {{v1Id}}}
+
+### 재시도: 같은 키로 두 번 실행 -> 둘 다 같은 id (새 문서를 만든 직후, 키를 바꿔서 실행)
+POST http://localhost:8080/documents/{{newDocId}}/versions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+Idempotency-Key: 11111111-1111-1111-1111-111111111111
+
+{"baseVersionId": null}
+
+### B가 같은 키로 재시도 -> 404
+POST http://localhost:8080/documents/{{newDocId}}/versions
+Content-Type: application/json
+Authorization: Bearer {{tokenB}}
+Idempotency-Key: 11111111-1111-1111-1111-111111111111
+
+{"baseVersionId": null}
+
+### 키 형식이 틀림 -> 400
+POST http://localhost:8080/documents/{{newDocId}}/versions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+Idempotency-Key: not-a-uuid
+
+{"baseVersionId": null}
+
+### 키 없음 -> 400
+POST http://localhost:8080/documents/{{newDocId}}/versions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{"baseVersionId": null}

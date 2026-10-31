@@ -14,7 +14,10 @@ class Document(
     @JoinColumn(name = "user_id")
     val user: User,
 
-    val currentVersionId: Long? = null,
+    var currentVersionId: Long? = null,
+
+    @Version
+    var lockVersion: Long = 0,
 
     @Column(insertable = false, updatable = false)
     val createdAt: LocalDateTime? = null,
