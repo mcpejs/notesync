@@ -58,6 +58,16 @@ class ChunkSplitterTest {
     }
 
     @Test
+    fun sameParagraphGetsSameHash() {
+        val chunks = prepareChunks("a\n\na\n\nb".toByteArray())
+
+        assertEquals(chunks[0].hashKey, chunks[1].hashKey)
+        assertEquals(32, chunks[0].hash.size)
+        assertEquals(64, chunks[0].hashKey.length)
+        assertTrue(chunks[0].hashKey != chunks[2].hashKey)
+    }
+
+    @Test
     fun randomContentRestoresAndFitsColumn() {
         val random = Random(42)
         val pieces = listOf("a", "가", "\n", "\r\n", "\n\n", "\r\n\r\n", "x".repeat(70_000))

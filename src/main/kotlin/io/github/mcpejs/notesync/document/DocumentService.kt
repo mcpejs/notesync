@@ -19,6 +19,7 @@ class DocumentService(
 
     // 트랜잭션의 첫 쿼리로 불러야 한다. 먼저 읽은 문서나 스냅샷이 있으면 기다린 뒤에도 낡은 값을 본다
     private fun findOwnedForUpdate(documentId: Long, requesterId: Long): Document {
+        userService.findByIdForUpdate(requesterId)
         val document=documentRepository.findByIdForUpdate(documentId) ?: throw DocumentNotFoundException(documentId)
         if(document.user.id != requesterId){
             throw DocumentNotFoundException(documentId)

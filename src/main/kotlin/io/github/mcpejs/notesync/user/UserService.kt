@@ -29,4 +29,6 @@ class UserService(
     fun findAll(): List<User> = userRepository.findAll()
 
     fun findById(id: Long): User = userRepository.findByIdOrNull(id) ?: throw UserNotFoundException(id)
+
+    fun findByIdForUpdate(id: Long): User=userRepository.findByIdForUpdate(id) ?: throw UserNotFoundException(id)
 }

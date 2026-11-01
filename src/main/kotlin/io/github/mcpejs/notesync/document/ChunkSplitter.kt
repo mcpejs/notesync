@@ -1,10 +1,21 @@
 package io.github.mcpejs.notesync.document
 
+import java.security.MessageDigest
+import java.util.HexFormat
+
 // BLOB 컬럼의 상한
 const val MAX_CHUNK_BYTES = 65_535
 
 private const val LF = '\n'.code.toByte()
 private const val CR = '\r'.code.toByte()
+
+// ByteArray의 ==는 내용을 비교하지 않아서 Map 키나 비교에는 hashKey를 쓴다
+class PreparedChunk(val hash: ByteArray, val content: ByteArray) {
+    val hashKey: String = HexFormat.of().formatHex(hash)
+}
+
+fun prepareChunks(content: ByteArray): List<PreparedChunk> =
+    splitIntoChunks(content).map { PreparedChunk(MessageDigest.getInstance("SHA-256").digest(it), it) }
 
 fun splitIntoChunks(content: ByteArray): List<ByteArray> =
     splitParagraphs(content).flatMap { cutToMaxSize(it) }
