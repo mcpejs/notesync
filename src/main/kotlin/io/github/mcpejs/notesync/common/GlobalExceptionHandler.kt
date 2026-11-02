@@ -4,6 +4,7 @@ import io.github.mcpejs.notesync.auth.InvalidCredentialsException
 import io.github.mcpejs.notesync.auth.UnauthorizedException
 import io.github.mcpejs.notesync.document.ConflictCopyCreatedException
 import io.github.mcpejs.notesync.document.DocumentNotFoundException
+import io.github.mcpejs.notesync.document.TooManyChunksException
 import io.github.mcpejs.notesync.user.UserNotFoundException
 
 import org.slf4j.LoggerFactory
@@ -57,6 +58,27 @@ class GlobalExceptionHandler {
                 e.copyTitle,
             )
         )
+    }
+
+    @ExceptionHandler(BodyTooLargeException::class)
+    fun handleBodyTooLarge(e: BodyTooLargeException): ResponseEntity<ErrorResponse> {
+        log.warn("Body too large")
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+            .body(ErrorResponse("BODY_TOO_LARGE", "요청 본문은 1MB 이하여야 합니다"))
+    }
+
+    @ExceptionHandler(TooManyChunksException::class)
+    fun handleTooManyChunks(e: TooManyChunksException): ResponseEntity<ErrorResponse> {
+        log.warn("{}", e.message)
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+            .body(ErrorResponse("TOO_MANY_CHUNKS", "문단이 너무 많습니다"))
+    }
+
+    @ExceptionHandler(LengthRequiredException::class)
+    fun handleLengthRequired(e: LengthRequiredException): ResponseEntity<ErrorResponse> {
+        log.warn("Content-Length missing")
+        return ResponseEntity.status(HttpStatus.LENGTH_REQUIRED)
+            .body(ErrorResponse("LENGTH_REQUIRED", "Content-Length 헤더가 필요합니다"))
     }
 
     @ExceptionHandler(InvalidCredentialsException::class)

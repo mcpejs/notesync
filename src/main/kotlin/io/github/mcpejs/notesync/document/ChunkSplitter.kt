@@ -6,6 +6,9 @@ import java.util.HexFormat
 // BLOB 컬럼의 상한
 const val MAX_CHUNK_BYTES = 65_535
 
+// 작은 문단이 많으면 1MB 안에서도 청크가 수십만 개가 되고 그동안 잠금을 쥔다
+const val MAX_CHUNKS_PER_VERSION = 4_096
+
 private const val LF = '\n'.code.toByte()
 private const val CR = '\r'.code.toByte()
 
