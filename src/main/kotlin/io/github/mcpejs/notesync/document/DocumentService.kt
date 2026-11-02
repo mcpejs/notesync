@@ -1,16 +1,20 @@
 package io.github.mcpejs.notesync.document
 
+import io.github.mcpejs.notesync.user.User
 import io.github.mcpejs.notesync.user.UserService
 import org.springframework.data.repository.findByIdOrNull
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.HexFormat
 
 @Service
 class DocumentService(
     private val documentRepository: DocumentRepository,
     private val userService: UserService,
-    private val documentVersionRepository: DocumentVersionRepository
+    private val documentVersionRepository: DocumentVersionRepository,
+    private val chunkRepository: ChunkRepository,
+    private val versionChunkRepository: VersionChunkRepository
 ) {
     companion object{
         const val DEFAULT_TITLE = "제목없음"
@@ -54,7 +58,7 @@ class DocumentService(
     }
 
     @Transactional
-    fun saveVersion(documentId: Long, baseVersionId: Long?, requestId: String, requesterId: Long): DocumentVersion {
+    fun saveVersion(documentId: Long, baseVersionId: Long?, requestId: String, requesterId: Long, chunks: List<PreparedChunk>): DocumentVersion {
         val document = findOwnedForUpdate(documentId, requesterId)
 
         val existDocumentVersion = documentVersionRepository.findByClientRequestId(requestId)
@@ -78,11 +82,12 @@ class DocumentService(
 
         val documentVersion = documentVersionRepository.save(DocumentVersion(document, nextVersionNum, requestId))
         document.currentVersionId = documentVersion.id
+        saveVersionChunks(documentVersion, document.user, chunks)
         return documentVersion
     }
 
     @Transactional
-    fun createConflictCopy(documentId: Long, requestId: String, requesterId: Long): ConflictCopyCreatedException {
+    fun createConflictCopy(documentId: Long, requestId: String, requesterId: Long, chunks: List<PreparedChunk>): ConflictCopyCreatedException {
         val originalDocument = findOwnedForUpdate(documentId, requesterId)
 
 //        같은 키가 동시에 와서 잠금을 기다리는 사이 사본이 이미 만들어졌을 수 있다
@@ -98,6 +103,23 @@ class DocumentService(
 
         val copyDocumentVersion = documentVersionRepository.save(DocumentVersion(copyDocument, 1, requestId))
         copyDocument.currentVersionId = copyDocumentVersion.id
+        saveVersionChunks(copyDocumentVersion, copyDocument.user, chunks)
         return ConflictCopyCreatedException(copyDocument.id!!, copyTitle, originalDocument.currentVersionId)
+    }
+
+    private fun saveVersionChunks(version: DocumentVersion, user: User, chunks: List<PreparedChunk>) {
+        if(chunks.isEmpty()) return
+
+        val byKey = mutableMapOf<String, Chunk>()
+        val hashes=chunks.distinctBy { it.hashKey }.map { it.hash }
+        for(chunk in chunkRepository.findByUserIdAndContentHashIn(user.id!!, hashes)) {
+            byKey[HexFormat.of().formatHex(chunk.contentHash)] = chunk
+        }
+        chunks.forEachIndexed { pos, chunk ->
+            val saved=byKey[chunk.hashKey]
+                ?: chunkRepository.save(Chunk(user, chunk.hash, chunk.content))
+                    .also { byKey[chunk.hashKey] = it }
+            versionChunkRepository.save(VersionChunk(VersionChunkId(version.id!!, pos),saved))
+        }
     }
 }

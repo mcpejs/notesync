@@ -24,6 +24,7 @@ data class DocumentResponse(
 
 data class SaveVersionRequest(
     val baseVersionId: Long? = null,
+    val content: String
 )
 
 data class VersionResponse(
@@ -72,6 +73,6 @@ class DocumentController(
         @RequestBody request: SaveVersionRequest,
         @RequestAttribute userId: Long,
     ): VersionResponse = VersionResponse.from(
-        documentSaveFacade.save(id, request.baseVersionId, requestId.toString(), userId)
+        documentSaveFacade.save(id, request.baseVersionId, requestId.toString(), userId, request.content.toByteArray())
     )
 }

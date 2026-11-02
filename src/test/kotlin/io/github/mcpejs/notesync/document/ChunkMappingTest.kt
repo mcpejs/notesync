@@ -36,7 +36,7 @@ class ChunkMappingTest {
     fun sameChunkCanRepeatInOneVersion() {
         val user = userService.create("tester", "test-${UUID.randomUUID()}@example.com", "password123")
         val document = documentService.create(user.id!!, "문서")
-        val version = documentService.saveVersion(document.id!!, null, UUID.randomUUID().toString(), user.id!!)
+        val version = documentService.saveVersion(document.id!!, null, UUID.randomUUID().toString(), user.id!!, emptyList())
         val a = chunkRepository.save(Chunk(user, sha256("a".toByteArray()), "a".toByteArray()))
         val b = chunkRepository.save(Chunk(user, sha256("b".toByteArray()), "b".toByteArray()))
 

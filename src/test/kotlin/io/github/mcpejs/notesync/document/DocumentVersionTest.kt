@@ -39,8 +39,8 @@ class DocumentVersionTest {
         val userId = newUserId()
         val doc = documentService.create(userId, "문서")
 
-        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId)
-        val v2 = documentService.saveVersion(doc.id!!, v1.id, newKey(), userId)
+        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
+        val v2 = documentService.saveVersion(doc.id!!, v1.id, newKey(), userId, emptyList())
 
         assertEquals(1, v1.num)
         assertEquals(2, v2.num)
@@ -53,8 +53,8 @@ class DocumentVersionTest {
         val doc = documentService.create(userId, "문서")
         val key = newKey()
 
-        val first = documentService.saveVersion(doc.id!!, null, key, userId)
-        val retry = documentService.saveVersion(doc.id!!, null, key, userId)
+        val first = documentService.saveVersion(doc.id!!, null, key, userId, emptyList())
+        val retry = documentService.saveVersion(doc.id!!, null, key, userId, emptyList())
 
         assertEquals(first.id, retry.id)
         assertEquals(first.id, documentService.findById(doc.id!!, userId).currentVersionId)
@@ -66,10 +66,10 @@ class DocumentVersionTest {
         val otherId = newUserId()
         val doc = documentService.create(ownerId, "문서")
         val key = newKey()
-        documentService.saveVersion(doc.id!!, null, key, ownerId)
+        documentService.saveVersion(doc.id!!, null, key, ownerId, emptyList())
 
         assertThrows<DocumentNotFoundException> {
-            documentService.saveVersion(doc.id!!, null, key, otherId)
+            documentService.saveVersion(doc.id!!, null, key, otherId, emptyList())
         }
     }
 
@@ -78,11 +78,11 @@ class DocumentVersionTest {
         val ownerId = newUserId()
         val otherId = newUserId()
         val key = newKey()
-        documentService.saveVersion(documentService.create(ownerId, "문서").id!!, null, key, ownerId)
+        documentService.saveVersion(documentService.create(ownerId, "문서").id!!, null, key, ownerId, emptyList())
         val otherDoc = documentService.create(otherId, "문서")
 
         assertThrows<DocumentNotFoundException> {
-            documentService.saveVersion(otherDoc.id!!, null, key, otherId)
+            documentService.saveVersion(otherDoc.id!!, null, key, otherId, emptyList())
         }
     }
 
@@ -92,7 +92,7 @@ class DocumentVersionTest {
         val saves = keys.map { key ->
             pool.submit<Result<DocumentVersion>> {
                 start.await()
-                runCatching { documentSaveFacade.save(documentId, baseVersionId, key, userId) }
+                runCatching { documentSaveFacade.save(documentId, baseVersionId, key, userId, ByteArray(0)) }
             }
         }
         start.countDown()
@@ -107,7 +107,7 @@ class DocumentVersionTest {
         repeat(40) {
             val userId = newUserId()
             val doc = documentService.create(userId, "회의록")
-            val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId)
+            val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
 
             val results = saveAtOnce(doc.id!!, v1.id, listOf(newKey(), newKey()), userId)
 
@@ -124,8 +124,8 @@ class DocumentVersionTest {
         repeat(40) {
             val userId = newUserId()
             val doc = documentService.create(userId, "회의록")
-            val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId)
-            documentService.saveVersion(doc.id!!, v1.id, newKey(), userId)
+            val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
+            documentService.saveVersion(doc.id!!, v1.id, newKey(), userId, emptyList())
             val key = newKey()
 
             val results = saveAtOnce(doc.id!!, v1.id, listOf(key, key), userId)
@@ -140,11 +140,11 @@ class DocumentVersionTest {
     fun staleBaseCreatesCopyAndKeepsOriginal() {
         val userId = newUserId()
         val doc = documentService.create(userId, "회의록")
-        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId)
-        val v2 = documentService.saveVersion(doc.id!!, v1.id, newKey(), userId)
+        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
+        val v2 = documentService.saveVersion(doc.id!!, v1.id, newKey(), userId, emptyList())
 
         val conflict = assertThrows<ConflictCopyCreatedException> {
-            documentSaveFacade.save(doc.id!!, v1.id, newKey(), userId)
+            documentSaveFacade.save(doc.id!!, v1.id, newKey(), userId, ByteArray(0))
         }
 
         // 사본이 커밋되어 다시 읽히고, 원본의 current는 그대로
@@ -159,15 +159,15 @@ class DocumentVersionTest {
     fun conflictRetryReturnsSameCopy() {
         val userId = newUserId()
         val doc = documentService.create(userId, "회의록")
-        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId)
-        documentService.saveVersion(doc.id!!, v1.id, newKey(), userId)
+        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
+        documentService.saveVersion(doc.id!!, v1.id, newKey(), userId, emptyList())
         val key = newKey()
 
         val first = assertThrows<ConflictCopyCreatedException> {
-            documentSaveFacade.save(doc.id!!, v1.id, key, userId)
+            documentSaveFacade.save(doc.id!!, v1.id, key, userId, ByteArray(0))
         }
         val retry = assertThrows<ConflictCopyCreatedException> {
-            documentSaveFacade.save(doc.id!!, v1.id, key, userId)
+            documentSaveFacade.save(doc.id!!, v1.id, key, userId, ByteArray(0))
         }
 
         assertEquals(first.copyId, retry.copyId)
@@ -179,10 +179,10 @@ class DocumentVersionTest {
     fun longTitleCopyFitsColumn() {
         val userId = newUserId()
         val doc = documentService.create(userId, "가".repeat(100))
-        documentService.saveVersion(doc.id!!, null, newKey(), userId)
+        documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
 
         val conflict = assertThrows<ConflictCopyCreatedException> {
-            documentSaveFacade.save(doc.id!!, null, newKey(), userId)
+            documentSaveFacade.save(doc.id!!, null, newKey(), userId, ByteArray(0))
         }
 
         assertEquals(100, conflict.copyTitle.length)
@@ -192,13 +192,13 @@ class DocumentVersionTest {
     fun conflictApiReturns409WithCopy() {
         val userId = newUserId()
         val doc = documentService.create(userId, "회의록")
-        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId)
+        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
 
         mockMvc.post("/documents/${doc.id}/versions") {
             header("Authorization", "Bearer ${jwtProvider.createToken(userId)}")
             header("Idempotency-Key", newKey())
             contentType = MediaType.APPLICATION_JSON
-            content = """{"baseVersionId": null}"""
+            content = """{"baseVersionId": null, "content": "본문"}"""
         }.andExpect {
             status { isConflict() }
             jsonPath("$.code") { value("VERSION_CONFLICT") }
@@ -216,7 +216,7 @@ class DocumentVersionTest {
             header("Authorization", "Bearer ${jwtProvider.createToken(userId)}")
             header("Idempotency-Key", newKey())
             contentType = MediaType.APPLICATION_JSON
-            content = """{"baseVersionId": null}"""
+            content = """{"baseVersionId": null, "content": "본문"}"""
         }.andExpect {
             status { isCreated() }
             jsonPath("$.num") { value(1) }
@@ -232,7 +232,7 @@ class DocumentVersionTest {
             header("Authorization", "Bearer ${jwtProvider.createToken(userId)}")
             header("Idempotency-Key", "not-a-uuid")
             contentType = MediaType.APPLICATION_JSON
-            content = """{"baseVersionId": null}"""
+            content = """{"baseVersionId": null, "content": "본문"}"""
         }.andExpect { status { isBadRequest() } }
     }
 }
