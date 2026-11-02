@@ -16,9 +16,10 @@ data class CreateDocumentRequest(
 data class DocumentResponse(
     val id: Long,
     val title: String,
+    val currentVersionId:Long? = null,
 ) {
     companion object {
-        fun from(doc: Document) = DocumentResponse(doc.id!!, doc.title)
+        fun from(doc: Document) = DocumentResponse(doc.id!!, doc.title, doc.currentVersionId)
     }
 }
 
@@ -36,6 +37,12 @@ data class VersionResponse(
         fun from(version: DocumentVersion) = VersionResponse(version.id!!, version.document.id!!, version.num)
     }
 }
+
+data class VersionContentResponse(
+    val documentId: Long,
+    val versionId: Long,
+    val content: String
+)
 
 @RestController
 @RequestMapping("/documents")
@@ -74,5 +81,16 @@ class DocumentController(
         @RequestAttribute userId: Long,
     ): VersionResponse = VersionResponse.from(
         documentSaveFacade.save(id, request.baseVersionId, requestId.toString(), userId, request.content.toByteArray())
+    )
+
+    @GetMapping("/{id}/versions/{versionId}")
+    fun getVersionContent(
+        @PathVariable id: Long,
+        @PathVariable versionId: Long,
+        @RequestAttribute userId: Long
+    ): VersionContentResponse = VersionContentResponse(
+        id,
+        versionId,
+        String(documentService.findVersionContent(id, versionId, userId))
     )
 }

@@ -6,6 +6,7 @@ import org.springframework.data.repository.findByIdOrNull
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.io.ByteArrayOutputStream
 import java.util.HexFormat
 
 @Service
@@ -55,6 +56,15 @@ class DocumentService(
         userService.findById(userId)
         val documents = documentRepository.findByUserId(userId)
         return documents
+    }
+
+    fun findVersionContent(documentId: Long, versionId: Long, requesterId: Long): ByteArray {
+        findById(documentId, requesterId)
+        documentVersionRepository.findByIdAndDocumentId(versionId, documentId) ?: throw DocumentNotFoundException(documentId)
+
+        val output= ByteArrayOutputStream()
+        versionChunkRepository.findContentsInOrder(versionId).forEach { output.write(it) }
+        return output.toByteArray()
     }
 
     @Transactional
