@@ -1,5 +1,7 @@
 # notesync
 
+[![CI](https://github.com/mcpejs/notesync/actions/workflows/ci.yml/badge.svg)](https://github.com/mcpejs/notesync/actions/workflows/ci.yml)
+
 Obsidian 같은 노트 앱을 직접 만들어 보려다 시작한 동기화 서버입니다. 화면 없이 백엔드만 만들어도, 두 기기가 같은 노트를 동시에 고칠 때 무엇을 남길지 정하는 일이 가장 어려웠습니다. 처음엔 `@Version`이면 충분하다고 봤지만, 테스트가 모두 통과한 뒤 동시 저장을 40번 돌려 보니 39번이 교착으로 실패했습니다. InnoDB 잠금 상태로 원인을 찾아 트랜잭션 첫 쿼리에서 문서 행을 잠그도록 고쳤고, 다음 날 터미널 두 개로 같은 교착을 손으로 재현했습니다. 테스트가 통과해도 제약이나 잠금을 일부러 빼 보며 정말 막히는지 확인했고, 동시성 설계와 저장 로직은 직접 짰습니다.
 
 **기술 스택:** Kotlin 2.3, Spring Boot 4.1, Spring Data JPA (Hibernate 7.4), MySQL 8.0, JWT (jjwt), JUnit 5, MockMvc
