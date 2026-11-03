@@ -18,7 +18,12 @@ private data class VersionBody(val id: Long)
 private data class ContentBody(val content: String)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-private data class ConflictBody(val currentVersionId: Long?, val conflictCopyId: Long, val conflictCopyTitle: String)
+private data class ConflictBody(
+    val currentVersionId: Long?,
+    val conflictCopyId: Long,
+    val conflictCopyTitle: String,
+    val conflictCopyVersionId: Long,
+)
 
 // 401은 토큰 문제라 어떤 파일을 보내도 실패하므로 바로 멈춘다. 나머지는 그 파일만 실패로 처리한다
 class ApiException(val status: Int, message: String) : RuntimeException(message) {
@@ -27,15 +32,13 @@ class ApiException(val status: Int, message: String) : RuntimeException(message)
 
 sealed interface SaveResult
 data class Saved(val versionId: Long) : SaveResult
-data class Conflict(val currentVersionId: Long?, val copyId: Long, val copyTitle: String) : SaveResult
+data class Conflict(val currentVersionId: Long?, val copyId: Long, val copyTitle: String, val copyVersionId: Long) : SaveResult
 
 class ApiClient(private val baseUrl: String, private val token: String) {
     private val http = HttpClient.newHttpClient()
     private val json = jacksonObjectMapper()
 
     fun listDocuments(): List<RemoteDocument> = json.readValue(expect200(send(get("/documents"))))
-
-    fun getDocument(id: Long): RemoteDocument = json.readValue(expect200(send(get("/documents/$id"))))
 
     fun getContent(documentId: Long, versionId: Long): String =
         json.readValue<ContentBody>(expect200(send(get("/documents/$documentId/versions/$versionId")))).content
@@ -52,7 +55,7 @@ class ApiClient(private val baseUrl: String, private val token: String) {
         val response = send(request)
         return when (response.statusCode()) {
             201 -> Saved(json.readValue<VersionBody>(response.body()).id)
-            409 -> json.readValue<ConflictBody>(response.body()).let { Conflict(it.currentVersionId, it.conflictCopyId, it.conflictCopyTitle) }
+            409 -> json.readValue<ConflictBody>(response.body()).let { Conflict(it.currentVersionId, it.conflictCopyId, it.conflictCopyTitle, it.conflictCopyVersionId) }
             else -> fail(response)
         }
     }

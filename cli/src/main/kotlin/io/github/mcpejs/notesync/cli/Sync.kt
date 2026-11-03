@@ -72,8 +72,11 @@ class Sync(private val api: ApiClient, private val folder: Path) {
             }
             is Conflict -> {
                 // 사본 파일로 받기. 재시도라서 이미 받은 사본이면 그 파일의 수정을 덮지 않는다
+                // 사본의 현재 버전이 아니라 서버가 내 내용으로 만든 버전을 받는다. 그 사이 다른 기기가 사본을 고쳤을 수 있다
                 val copyName = fileNameFor(result.copyTitle, result.copyId, state, folder)
-                if(state[copyName] == null) download(copyName, api.getDocument(result.copyId))
+                if(state[copyName] == null) {
+                    writeLocal(copyName, result.copyId, result.copyVersionId, api.getContent(result.copyId, result.copyVersionId))
+                }
 
                 // 서버에 현재 버전이 없으면 상태와 서버가 어긋난 것이라 내 파일을 그대로 둔다
                 val latestId = result.currentVersionId

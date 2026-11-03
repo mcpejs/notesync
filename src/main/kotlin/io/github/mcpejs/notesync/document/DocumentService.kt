@@ -35,6 +35,7 @@ class DocumentService(
     private fun conflictCopyOf(copyVersion: DocumentVersion, originalDocument: Document) = ConflictCopyCreatedException(
         copyVersion.document.id!!,
         copyVersion.document.title,
+        copyVersion.id!!,
         originalDocument.currentVersionId,
     )
 
@@ -114,7 +115,7 @@ class DocumentService(
         val copyDocumentVersion = documentVersionRepository.save(DocumentVersion(copyDocument, 1, requestId))
         copyDocument.currentVersionId = copyDocumentVersion.id
         saveVersionChunks(copyDocumentVersion, copyDocument.user, chunks)
-        return ConflictCopyCreatedException(copyDocument.id!!, copyTitle, originalDocument.currentVersionId)
+        return ConflictCopyCreatedException(copyDocument.id!!, copyTitle, copyDocumentVersion.id!!, originalDocument.currentVersionId)
     }
 
     private fun saveVersionChunks(version: DocumentVersion, user: User, chunks: List<PreparedChunk>) {

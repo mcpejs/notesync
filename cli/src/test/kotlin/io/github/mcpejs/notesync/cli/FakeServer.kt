@@ -23,6 +23,8 @@ class FakeServer : AutoCloseable {
     var requests = 0
     var token = "token"
     var failingDocumentId: Long? = null
+    // 409를 돌려주기 직전에 부른다. 응답과 다음 요청 사이에 다른 기기가 사본을 고친 상황을 만든다
+    var onConflict: (FakeDocument) -> Unit = {}
     val baseUrl: String
 
     init {
@@ -76,24 +78,28 @@ class FakeServer : AutoCloseable {
         val base = (body["baseVersionId"] as Number?)?.toLong()
 
         val first = keys[key]
-        if (first != null && first.first != document.id) return respond(exchange, 409, conflict(document, first.first))
+        if (first != null && first.first != document.id) return respond(exchange, 409, conflict(document, first.first, first.second))
         if (first != null) return respond(exchange, 201, mapOf("id" to first.second))
 
         if (document.current != base) {
             val copy = create(document.title + "(충돌 사본)")
-            keys[key] = copy.id to addVersion(copy, content)
-            return respond(exchange, 409, conflict(document, copy.id))
+            val copyVersionId = addVersion(copy, content)
+            keys[key] = copy.id to copyVersionId
+            val body = conflict(document, copy.id, copyVersionId)
+            onConflict(copy)
+            return respond(exchange, 409, body)
         }
         val id = addVersion(document, content)
         keys[key] = document.id to id
         respond(exchange, 201, mapOf("id" to id))
     }
 
-    private fun conflict(document: FakeDocument, copyId: Long) = mapOf(
+    private fun conflict(document: FakeDocument, copyId: Long, copyVersionId: Long) = mapOf(
         "code" to "VERSION_CONFLICT",
         "currentVersionId" to document.current,
         "conflictCopyId" to copyId,
         "conflictCopyTitle" to documents.getValue(copyId).title,
+        "conflictCopyVersionId" to copyVersionId,
     )
 
     private fun info(document: FakeDocument) =

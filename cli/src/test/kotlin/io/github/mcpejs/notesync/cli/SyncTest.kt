@@ -383,6 +383,26 @@ class SyncTest {
         assertEquals(server.copies().single().id, state("회의록(충돌 사본).md")?.docId)
     }
 
+    // 409 직후 다른 기기가 사본을 고쳐도 사본 파일은 내 수정이고, 그 기기의 수정은 다음 pull에서 받는다
+    @Test
+    fun u8CopyEditedRightAfterConflictKeepsMyEditInCopy() {
+        val document = server.document("회의록", "옛 내용")
+        tracked("회의록.md", document, "옛 내용")
+        server.addVersion(document, "새 내용")
+        write("회의록.md", "내 수정")
+        server.onConflict = { copy -> server.addVersion(copy, "다른 기기가 고친 사본") }
+
+        assertTrue(sync().push())
+
+        val copy = server.copies().single()
+        assertEquals("내 수정", read("회의록(충돌 사본).md"))
+        assertEquals(copy.versions.keys.first(), state("회의록(충돌 사본).md")?.versionId)
+
+        assertTrue(sync().pull())
+        assertEquals("다른 기기가 고친 사본", read("회의록(충돌 사본).md"))
+        assertEquals(copy.current, state("회의록(충돌 사본).md")?.versionId)
+    }
+
     @Test
     fun u8StaleFileConflictKeepsBothAndStops() {
         val document = server.document("회의록", "옛 내용")

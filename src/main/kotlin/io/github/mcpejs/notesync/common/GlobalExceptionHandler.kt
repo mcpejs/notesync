@@ -26,6 +26,7 @@ data class VersionConflictResponse(
     val currentVersionId: Long?,
     val conflictCopyId: Long,
     val conflictCopyTitle: String,
+    val conflictCopyVersionId: Long,
 )
 
 @RestControllerAdvice
@@ -56,6 +57,7 @@ class GlobalExceptionHandler {
                 e.currentVersionId,
                 e.copyId,
                 e.copyTitle,
+                e.copyVersionId,
             )
         )
     }

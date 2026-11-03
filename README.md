@@ -173,7 +173,7 @@ cd ~/notesync-demo/a && notesync push
 | POST | `/documents/{id}/versions` | 201 | 400 키 없음 또는 형식 오류, 401, 404, 409 `VERSION_CONFLICT` (충돌 사본 생성), 411 길이 없음, 413 `BODY_TOO_LARGE` 또는 `TOO_MANY_CHUNKS` |
 | GET | `/documents/{id}/versions/{versionId}` | 200 | 401, 404 |
 
-버전 저장은 `Idempotency-Key` 헤더(UUID)와 본문 `{"baseVersionId": <본 버전 또는 null>, "content": "..."}`를 받습니다. 409 본문에는 `currentVersionId`, `conflictCopyId`, `conflictCopyTitle`이 들어 있습니다.
+버전 저장은 `Idempotency-Key` 헤더(UUID)와 본문 `{"baseVersionId": <본 버전 또는 null>, "content": "..."}`를 받습니다. 409 본문에는 `currentVersionId`, `conflictCopyId`, `conflictCopyTitle`, `conflictCopyVersionId`(내 내용으로 만든 사본 버전, 같은 키로 다시 보내도 같은 값)가 들어 있습니다.
 
 ## 범위와 제한
 

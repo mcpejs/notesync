@@ -1,9 +1,9 @@
 package io.github.mcpejs.notesync.document
 
+import com.jayway.jsonpath.JsonPath
 import io.github.mcpejs.notesync.auth.JwtProvider
 import io.github.mcpejs.notesync.user.UserService
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
@@ -130,8 +130,9 @@ class DocumentVersionTest {
 
             val results = saveAtOnce(doc.id!!, v1.id, listOf(key, key), userId)
 
-            val copyIds = results.map { (it.exceptionOrNull() as ConflictCopyCreatedException).copyId }
-            assertEquals(1, copyIds.toSet().size)
+            val conflicts = results.map { it.exceptionOrNull() as ConflictCopyCreatedException }
+            assertEquals(1, conflicts.map { it.copyId }.toSet().size)
+            assertEquals(1, conflicts.map { it.copyVersionId }.toSet().size)
             assertEquals(2, documentService.findByUserId(userId).size)
         }
     }
@@ -150,7 +151,7 @@ class DocumentVersionTest {
         // 사본이 커밋되어 다시 읽히고, 원본의 current는 그대로
         val copy = documentService.findById(conflict.copyId, userId)
         assertEquals(conflict.copyTitle, copy.title)
-        assertNotNull(copy.currentVersionId)
+        assertEquals(copy.currentVersionId, conflict.copyVersionId)
         assertEquals(v2.id, conflict.currentVersionId)
         assertEquals(v2.id, documentService.findById(doc.id!!, userId).currentVersionId)
     }
@@ -171,8 +172,30 @@ class DocumentVersionTest {
         }
 
         assertEquals(first.copyId, retry.copyId)
+        assertEquals(first.copyVersionId, retry.copyVersionId)
         assertEquals(first.currentVersionId, retry.currentVersionId)
         assertEquals(2, documentService.findByUserId(userId).size)
+    }
+
+    // 다른 기기가 사본을 받아 고친 뒤에 재시도가 와도, 그 키로 만든 사본 버전을 돌려준다
+    @Test
+    fun conflictRetryAfterCopyEditedReturnsFirstCopyVersion() {
+        val userId = newUserId()
+        val doc = documentService.create(userId, "회의록")
+        val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
+        documentService.saveVersion(doc.id!!, v1.id, newKey(), userId, emptyList())
+        val key = newKey()
+
+        val first = assertThrows<ConflictCopyCreatedException> {
+            documentSaveFacade.save(doc.id!!, v1.id, key, userId, ByteArray(0))
+        }
+        val edited = documentService.saveVersion(first.copyId, first.copyVersionId, newKey(), userId, emptyList())
+        val retry = assertThrows<ConflictCopyCreatedException> {
+            documentSaveFacade.save(doc.id!!, v1.id, key, userId, ByteArray(0))
+        }
+
+        assertEquals(first.copyVersionId, retry.copyVersionId)
+        assertEquals(edited.id, documentService.findById(first.copyId, userId).currentVersionId)
     }
 
     @Test
@@ -194,7 +217,7 @@ class DocumentVersionTest {
         val doc = documentService.create(userId, "회의록")
         val v1 = documentService.saveVersion(doc.id!!, null, newKey(), userId, emptyList())
 
-        mockMvc.post("/documents/${doc.id}/versions") {
+        val result = mockMvc.post("/documents/${doc.id}/versions") {
             header("Authorization", "Bearer ${jwtProvider.createToken(userId)}")
             header("Idempotency-Key", newKey())
             contentType = MediaType.APPLICATION_JSON
@@ -203,8 +226,12 @@ class DocumentVersionTest {
             status { isConflict() }
             jsonPath("$.code") { value("VERSION_CONFLICT") }
             jsonPath("$.currentVersionId") { value(v1.id!!) }
-            jsonPath("$.conflictCopyId") { exists() }
-        }
+        }.andReturn()
+
+        val copy = documentService.findByUserId(userId).single { it.id != doc.id }
+        val body = JsonPath.parse(result.response.contentAsString)
+        assertEquals(copy.id, body.read("$.conflictCopyId", Long::class.java))
+        assertEquals(copy.currentVersionId, body.read("$.conflictCopyVersionId", Long::class.java))
     }
 
     @Test
