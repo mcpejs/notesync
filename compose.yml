@@ -23,9 +23,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    env_file: .env
+    # .env에서 앱에 필요한 두 값만 받는다 (root 비밀번호는 넘기지 않는다)
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/notesync
+      DB_PASSWORD: ${DB_PASSWORD:?.env에 DB_PASSWORD가 필요합니다}
+      JWT_SECRET: ${JWT_SECRET:?.env에 JWT_SECRET이 필요합니다}
     ports:
       # 서버 밖에는 열지 않는다. 접속은 SSH 터널로
       - "127.0.0.1:8080:8080"
