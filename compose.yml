@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: notesync
+      MYSQL_USER: notesync_app
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?.env에 MYSQL_ROOT_PASSWORD가 필요합니다}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?.env에 DB_PASSWORD가 필요합니다}
+    volumes:
+      - db-data:/var/lib/mysql
+      # 볼륨이 비어 있을 때(처음 한 번)만 실행된다. 이후 스키마 변경은 직접 반영해야 한다
+      - ./docs/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      # 초기화 중에는 임시 서버가 TCP를 열지 않아서, 스키마까지 들어간 뒤에 healthy가 된다
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/notesync
+    ports:
+      # 서버 밖에는 열지 않는다. 접속은 SSH 터널로
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
+
+volumes:
+  db-data:

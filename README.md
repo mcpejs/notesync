@@ -111,36 +111,37 @@ d-----        2026-11-02   오후 4:35                .notesync
 
 ## 실행 방법
 
-JDK 21과 MySQL 8.0이 필요합니다. 시연용 `demo` 프로필은 전용 DB `notesync_demo`와 포트 18080을 씁니다.
+Docker와 Compose v2가 필요합니다. `compose.yml`이 MySQL 8.0과 서버를 함께 띄웁니다.
 
-**1. DB 준비 (MySQL root로 한 번)**
-
-```sql
-CREATE DATABASE notesync_demo;
-CREATE USER IF NOT EXISTS 'notesync_app'@'localhost' IDENTIFIED BY '<DB 비밀번호>';
-GRANT ALL PRIVILEGES ON notesync_demo.* TO 'notesync_app'@'localhost';
-```
+**1. 비밀 값 준비.** `.env.example`을 `.env`로 복사하고 값을 채웁니다. `.env`는 커밋하지 않습니다.
 
 ```bash
-mysql -u notesync_app -p notesync_demo < docs/schema.sql
+cp .env.example .env
+chmod 600 .env
 ```
 
-**2. 서버 실행.** DB 비밀번호와 JWT 키(32바이트 이상)는 환경 변수로만 넘깁니다.
+**2. 실행**
 
 ```bash
-export DB_PASSWORD='<DB 비밀번호>'
-export JWT_SECRET='<32바이트 이상 임의 문자열>'
-./gradlew bootRun --args='--spring.profiles.active=demo'
+docker compose up -d --build
+docker compose ps
+docker compose logs app
 ```
+
+- DB는 처음 뜰 때 `docs/schema.sql`로 테이블을 만들고, healthcheck가 통과한 뒤에 서버가 시작합니다.
+- 스키마 자동 실행은 DB 볼륨이 비어 있을 때 한 번만 돕니다. 이후 `schema.sql`을 바꿔도 반영되지 않으니 직접 적용하거나, 데이터를 버려도 되면 `docker compose down -v`로 볼륨을 지우고 다시 띄웁니다.
+- 서버는 `127.0.0.1:8080`에만 열립니다. 다른 PC에서는 SSH 터널(`ssh -L 8080:127.0.0.1:8080 <서버>`)로 붙습니다.
+
+Docker 없이 로컬 MySQL로 띄울 때는 `notesync_demo` DB에 `schema.sql`을 넣고 `DB_PASSWORD`, `JWT_SECRET`을 환경 변수로 준 뒤 `./gradlew bootRun --args='--spring.profiles.active=demo'`를 실행합니다 (포트 18080).
 
 **3. 사용자 만들기와 토큰 받기**
 
 ```bash
-curl -s -X POST localhost:18080/auth/signup -H 'Content-Type: application/json' \
+curl -s -X POST localhost:8080/auth/signup -H 'Content-Type: application/json' \
   -d '{"name":"demo","email":"demo@example.com","password":"<비밀번호>"}'
-export NOTESYNC_TOKEN=$(curl -s -X POST localhost:18080/auth/login -H 'Content-Type: application/json' \
+export NOTESYNC_TOKEN=$(curl -s -X POST localhost:8080/auth/login -H 'Content-Type: application/json' \
   -d '{"email":"demo@example.com","password":"<비밀번호>"}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
-export NOTESYNC_URL=http://localhost:18080
+export NOTESYNC_URL=http://localhost:8080
 ```
 
 토큰은 1시간 뒤 만료됩니다. PowerShell에서는 `$env:NOTESYNC_TOKEN = (Invoke-RestMethod ...).accessToken` 형태로 넣습니다.
@@ -156,7 +157,7 @@ cd ~/notesync-demo/a && notesync push
 
 동기화할 폴더 안에서 `notesync push`, `notesync pull`을 실행합니다. 폴더마다 상태가 `.notesync/state.json`에 저장되어 폴더 하나가 기기 하나처럼 동작합니다.
 
-**테스트:** `./gradlew test`는 테스트 DB `notesync_test`를 씁니다 (서버 55개, CLI 54개).
+**테스트:** `./gradlew test`는 테스트 DB `notesync_test`를 씁니다 (서버 56개, CLI 55개).
 
 ## API
 
