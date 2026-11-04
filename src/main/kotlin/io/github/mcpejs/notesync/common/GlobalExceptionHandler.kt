@@ -4,6 +4,7 @@ import io.github.mcpejs.notesync.auth.InvalidCredentialsException
 import io.github.mcpejs.notesync.auth.UnauthorizedException
 import io.github.mcpejs.notesync.document.ConflictCopyCreatedException
 import io.github.mcpejs.notesync.document.DocumentNotFoundException
+import io.github.mcpejs.notesync.document.MAX_CHUNKS_PER_VERSION
 import io.github.mcpejs.notesync.document.TooManyChunksException
 import io.github.mcpejs.notesync.user.UserNotFoundException
 
@@ -27,6 +28,14 @@ data class VersionConflictResponse(
     val conflictCopyId: Long,
     val conflictCopyTitle: String,
     val conflictCopyVersionId: Long,
+)
+
+// 413일 때 클라이언트가 얼마나 넘었는지 알려 줄 수 있게 제한값과 실제값을 같이 보낸다
+data class LimitExceededResponse(
+    val code: String,
+    val message: String,
+    val limit: Long,
+    val actual: Long,
 )
 
 @RestControllerAdvice
@@ -63,17 +72,17 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BodyTooLargeException::class)
-    fun handleBodyTooLarge(e: BodyTooLargeException): ResponseEntity<ErrorResponse> {
-        log.warn("Body too large")
+    fun handleBodyTooLarge(e: BodyTooLargeException): ResponseEntity<LimitExceededResponse> {
+        log.warn("{}", e.message)
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
-            .body(ErrorResponse("BODY_TOO_LARGE", "요청 본문은 1MB 이하여야 합니다"))
+            .body(LimitExceededResponse("BODY_TOO_LARGE", "요청 본문은 1MB 이하여야 합니다", MAX_BODY_BYTES, e.actual))
     }
 
     @ExceptionHandler(TooManyChunksException::class)
-    fun handleTooManyChunks(e: TooManyChunksException): ResponseEntity<ErrorResponse> {
+    fun handleTooManyChunks(e: TooManyChunksException): ResponseEntity<LimitExceededResponse> {
         log.warn("{}", e.message)
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
-            .body(ErrorResponse("TOO_MANY_CHUNKS", "문단이 너무 많습니다"))
+            .body(LimitExceededResponse("TOO_MANY_CHUNKS", "문단이 너무 많습니다", MAX_CHUNKS_PER_VERSION.toLong(), e.count.toLong()))
     }
 
     @ExceptionHandler(LengthRequiredException::class)

@@ -52,6 +52,8 @@ class SaveLimitApiTest {
         saveBody(doc.id!!, userId, jsonOfSize(MAX_BODY_BYTES + 1)).andExpect {
             status { isEqualTo(413) }
             jsonPath("$.code") { value("BODY_TOO_LARGE") }
+            jsonPath("$.limit") { value(MAX_BODY_BYTES) }
+            jsonPath("$.actual") { value(MAX_BODY_BYTES + 1) }
         }
     }
 
@@ -89,6 +91,8 @@ class SaveLimitApiTest {
         saveBody(doc.id!!, userId, """{"content": "$content"}""").andExpect {
             status { isEqualTo(413) }
             jsonPath("$.code") { value("TOO_MANY_CHUNKS") }
+            jsonPath("$.limit") { value(MAX_CHUNKS_PER_VERSION) }
+            jsonPath("$.actual") { value(MAX_CHUNKS_PER_VERSION + 1) }
         }
     }
 }

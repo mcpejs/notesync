@@ -7,7 +7,7 @@ import org.springframework.web.servlet.HandlerInterceptor
 
 const val MAX_BODY_BYTES = 1024 * 1024L
 
-class BodyTooLargeException : RuntimeException("Request body too large")
+class BodyTooLargeException(val actual: Long) : RuntimeException("Request body too large: $actual")
 
 class LengthRequiredException : RuntimeException("Content-Length required")
 
@@ -21,7 +21,7 @@ class BodySizeInterceptor : HandlerInterceptor {
     ): Boolean {
         val length = request.contentLengthLong
         if (length < 0) throw LengthRequiredException()
-        if (length > MAX_BODY_BYTES) throw BodyTooLargeException()
+        if (length > MAX_BODY_BYTES) throw BodyTooLargeException(length)
         return true
     }
 }

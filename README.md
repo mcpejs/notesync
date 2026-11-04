@@ -171,7 +171,7 @@ cd ~/notesync-demo/a && notesync push
 | POST | `/documents` | 201 | 400 제목 100자 초과, 401 |
 | GET | `/documents` | 200 | 401 |
 | GET | `/documents/{id}` | 200 | 401, 404 |
-| POST | `/documents/{id}/versions` | 201 | 400 키 없음 또는 형식 오류, 401, 404, 409 `VERSION_CONFLICT` (충돌 사본 생성), 411 길이 없음, 413 `BODY_TOO_LARGE` 또는 `TOO_MANY_CHUNKS` |
+| POST | `/documents/{id}/versions` | 201 | 400 키 없음 또는 형식 오류, 401, 404, 409 `VERSION_CONFLICT` (충돌 사본 생성), 411 길이 없음, 413 `BODY_TOO_LARGE` 또는 `TOO_MANY_CHUNKS` (본문에 제한값 `limit`과 실제값 `actual`) |
 | GET | `/documents/{id}/versions/{versionId}` | 200 | 401, 404 |
 
 버전 저장은 `Idempotency-Key` 헤더(UUID)와 본문 `{"baseVersionId": <본 버전 또는 null>, "content": "..."}`를 받습니다. 409 본문에는 `currentVersionId`, `conflictCopyId`, `conflictCopyTitle`, `conflictCopyVersionId`(내 내용으로 만든 사본 버전, 같은 키로 다시 보내도 같은 값)가 들어 있습니다.
@@ -181,7 +181,7 @@ cd ~/notesync-demo/a && notesync push
 - 삭제는 동기화되지 않습니다. 지운 파일은 다음 pull에서 복구됩니다.
 - 폴더 바로 아래의 UTF-8 `.md` 파일만 다룹니다. 하위 폴더와 이미지는 대상이 아닙니다.
 - 파일 이름을 바꾸면 새 문서로 저장되고, 옛 이름은 다음 pull에서 복구됩니다.
-- 1MB를 넘는 파일은 413으로 저장되지 않지만, 문서는 먼저 만들어져서 다른 기기에 빈 파일로 나타납니다.
+- 처음 push하는 파일이 413(요청 1MB 초과 또는 문단 4,096개 초과)으로 거절되면 빈 문서가 남고 다른 기기에는 빈 파일로 나타납니다. 의도한 동작입니다. 문서 만들기와 버전 저장은 따로이고, 버전 저장이 실패해도 빈 문서와 버전이 있는 문서가 똑같이 동작합니다. 로컬 파일은 그대로 있어서, 줄인 뒤 다시 push하면 같은 문서에 첫 버전으로 들어갑니다.
 - 시연은 한 PC의 폴더 두 개로 두 기기를 흉내 낸 것입니다. 모바일 클라이언트와 실시간 동기화는 없습니다.
 
 하지 않은 것:

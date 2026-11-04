@@ -7,6 +7,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.util.Locale
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class RemoteDocument(val id: Long, val title: String, val currentVersionId: Long?)
@@ -77,6 +78,30 @@ class ApiClient(private val baseUrl: String, private val token: String) {
         return response.body()
     }
 
-    private fun fail(response: HttpResponse<String>): Nothing =
-        throw ApiException(response.statusCode(), "서버 오류 ${response.statusCode()}: ${response.body()}")
+    private fun fail(response: HttpResponse<String>): Nothing {
+        val message = if (response.statusCode() == 413) limitExceededMessage(response.body())
+            else "서버 오류 ${response.statusCode()}: ${response.body()}"
+        throw ApiException(response.statusCode(), message)
+    }
+
+    // 413 본문의 code에 따라 사람이 읽을 문장으로 바꾼다. limit, actual이 없는 옛 서버면 수치를 뺀다
+    private fun limitExceededMessage(body: String): String {
+        val fields = runCatching { json.readValue<Map<String, Any?>>(body) }.getOrDefault(emptyMap())
+        val limit = (fields["limit"] as? Number)?.toLong()
+        val actual = (fields["actual"] as? Number)?.toLong()
+        val retry = "로컬 파일은 그대로 있으니 줄인 뒤 다시 push하세요."
+        return when (fields["code"]) {
+            "BODY_TOO_LARGE" -> "요청 크기가 제한을 넘었습니다${figures("요청", "바이트", limit, actual)}. " +
+                "제한은 파일 크기가 아니라 JSON으로 보낸 요청 크기 기준이라, 줄바꿈과 따옴표가 늘어나 1MB보다 작은 파일도 넘을 수 있습니다. $retry"
+            "TOO_MANY_CHUNKS" -> "문단(빈 줄로 나뉜 덩어리) 수가 제한을 넘었습니다${figures("문단", "개", limit, actual)}. $retry"
+            else -> "서버가 요청이 너무 크다고 거절했습니다 (413). $retry"
+        }
+    }
+
+    private fun figures(name: String, unit: String, limit: Long?, actual: Long?): String {
+        if (limit == null || actual == null || limit <= 0) return ""
+        val percent = (actual - limit) * 100.0 / limit
+        val over = if (percent < 0.1) "0.1% 미만" else String.format(Locale.ROOT, "%.1f%%", percent)
+        return String.format(Locale.ROOT, " (%s %,d%s, 제한 %,d%s, %s 초과)", name, actual, unit, limit, unit, over)
+    }
 }

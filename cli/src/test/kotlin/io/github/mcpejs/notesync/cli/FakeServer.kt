@@ -23,6 +23,7 @@ class FakeServer : AutoCloseable {
     var requests = 0
     var token = "token"
     var failingDocumentId: Long? = null
+    var failingBody: Map<String, Any?> = mapOf("code" to "BODY_TOO_LARGE", "limit" to 1_048_576, "actual" to 1_153_434)
     // 409를 돌려주기 직전에 부른다. 응답과 다음 요청 사이에 다른 기기가 사본을 고친 상황을 만든다
     var onConflict: (FakeDocument) -> Unit = {}
     val baseUrl: String
@@ -70,7 +71,7 @@ class FakeServer : AutoCloseable {
     }
 
     private fun save(exchange: HttpExchange, document: FakeDocument) {
-        if (document.id == failingDocumentId) return respond(exchange, 413, mapOf("code" to "BODY_TOO_LARGE"))
+        if (document.id == failingDocumentId) return respond(exchange, 413, failingBody)
 
         val key = UUID.fromString(exchange.requestHeaders.getFirst("Idempotency-Key")).toString()
         val body = json.readValue<Map<String, Any?>>(exchange.requestBody.readAllBytes())
